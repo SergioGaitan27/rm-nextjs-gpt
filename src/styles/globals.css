@@ -1,4 +1,16 @@
-/* src/styles/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Estilos globales adicionales */
+body {
+  @apply bg-black text-white font-sans;
+}
+
+a {
+  @apply text-yellow-400 no-underline;
+}
+
+a:hover {
+  @apply text-gray-300;
+}

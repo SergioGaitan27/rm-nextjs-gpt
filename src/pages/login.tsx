@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import Link from 'next/link';  // Asegúrate de importar Link de next/link
+import Link from 'next/link';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -9,33 +9,30 @@ const LoginPage = () => {
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Intenta iniciar sesión utilizando NextAuth
     const result = await signIn('credentials', {
-      redirect: false, // No redirigir automáticamente
+      redirect: false, 
       username,
       password,
     });
 
     if (result?.error) {
-      // Mostrar un mensaje de error en la interfaz de usuario
-      setError('Error de autenticación: Usuario o contraseña incorrecta.');
+      setError(result.error);
     } else {
-      // Redirigir al usuario a la página deseada después del login
       window.location.href = '/dashboard';
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-black py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
             Inicia sesión en tu cuenta
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            ¿No tienes una cuenta? {' '}
-            <Link href="/register" legacyBehavior>
-              <a className="font-medium text-indigo-600 hover:text-indigo-500">Regístrate ahora</a>
+          <p className="mt-2 text-center text-sm text-gray-400">
+            ¿No tienes una cuenta?{' '}
+            <Link href="/register" className="font-medium text-yellow-400 hover:text-yellow-300">
+              Regístrate ahora
             </Link>
           </p>
           {error && <p className="text-red-500 text-center">{error}</p>}
@@ -51,7 +48,7 @@ const LoginPage = () => {
                 type="text"
                 autoComplete="username"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 rounded-t-md focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 focus:z-10 sm:text-sm"
                 placeholder="Nombre de usuario"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -65,7 +62,7 @@ const LoginPage = () => {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 rounded-b-md focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 focus:z-10 sm:text-sm"
                 placeholder="Contraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -75,7 +72,7 @@ const LoginPage = () => {
 
           <div>
             <button type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
             >
               Iniciar sesión
             </button>
