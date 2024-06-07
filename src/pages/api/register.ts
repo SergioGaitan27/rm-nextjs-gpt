@@ -21,6 +21,18 @@ export default async function handler(
     }
 
     try {
+      // Verificar si el usuario o el correo electrónico ya existen
+      const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+      
+      if (existingUser) {
+        if (existingUser.username === username) {
+          return res.status(400).json({ message: 'El nombre de usuario ya está registrado.' });
+        }
+        if (existingUser.email === email) {
+          return res.status(400).json({ message: 'El correo electrónico ya está registrado.' });
+        }
+      }
+
       // Hashear la contraseña antes de guardarla
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);

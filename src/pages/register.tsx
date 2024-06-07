@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { FaCheck, FaTimes } from 'react-icons/fa';
+import Modal from 'react-modal';
+
+Modal.setAppElement('#__next');
 
 const RegisterPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
-  const [errors, setErrors] = useState({ email: '', password: '', general: '' });
+  const [errors, setErrors] = useState({ email: '', password: '', general: '', username: '' });
   const [passwordValidations, setPasswordValidations] = useState({
     length: false,
     uppercase: false,
@@ -15,6 +18,7 @@ const RegisterPage = () => {
     specialChar: false,
   });
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,6 +35,11 @@ const RegisterPage = () => {
     setPasswordValidations({ length, uppercase, lowercase, number, specialChar });
 
     return length && uppercase && lowercase && number && specialChar;
+  };
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUsername(e.target.value);
+    setErrors(prev => ({ ...prev, username: '' }));
   };
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,18 +69,28 @@ const RegisterPage = () => {
       return;
     }
 
-    const response = await fetch('/api/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, password, email }),
-    });
+    try {
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password, email }),
+      });
 
-    if (response.ok) {
-      alert('Registro exitoso');
-      window.location.href = '/login';
-    } else {
+      if (response.ok) {
+        setModalIsOpen(true);
+      } else {
+        const data = await response.json();
+        if (data.message === 'El nombre de usuario ya está registrado.') {
+          setErrors(prev => ({ ...prev, username: data.message, general: '' }));
+        } else if (data.message === 'El correo electrónico ya está registrado.') {
+          setErrors(prev => ({ ...prev, email: data.message, general: '' }));
+        } else {
+          setErrors(prev => ({ ...prev, general: data.message }));
+        }
+      }
+    } catch (error) {
       setErrors(prev => ({ ...prev, general: 'Error al registrar' }));
     }
   };
@@ -105,11 +124,12 @@ const RegisterPage = () => {
                 type="text"
                 autoComplete="username"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 rounded-t-md focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 focus:z-10 sm:text-sm"
+                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${errors.username ? 'border-red-500' : 'border-gray-700'} placeholder-gray-500 text-white bg-gray-800 rounded-t-md focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 focus:z-10 sm:text-sm`}
                 placeholder="Nombre de usuario"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={handleUsernameChange}
               />
+              {errors.username && <p className="text-red-500 text-xs mt-1 mb-1.5">{errors.username}</p>}
             </div>
             <div>
               <label htmlFor="email" className="sr-only">Correo electrónico</label>
@@ -124,8 +144,8 @@ const RegisterPage = () => {
                 value={email}
                 onChange={handleEmailChange}
                 onBlur={handleEmailChange}
-                />
-                {errors.email && <p className="text-red-500 text-xs mt-1 mb-1.5">{errors.email}</p>}
+              />
+              {errors.email && <p className="text-red-500 text-xs mt-1 mb-1.5">{errors.email}</p>}
             </div>
             <div>
               <label htmlFor="password" className="sr-only">Contraseña</label>
@@ -170,9 +190,8 @@ const RegisterPage = () => {
             </div>
           </div>
 
-
           <div>
-            <button type="submit"
+          <button type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
             >
               Registrarse
@@ -180,6 +199,27 @@ const RegisterPage = () => {
           </div>
         </form>
       </div>
+
+      <Modal
+        isOpen={modalIsOpen}
+        onRequestClose={() => setModalIsOpen(false)}
+        className="fixed inset-0 flex items-center justify-center p-4 bg-black bg-opacity-75"
+        overlayClassName="fixed inset-0 bg-black bg-opacity-50"
+      >
+        <div className="bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">Registro exitoso</h2>
+          <p className="text-gray-400 mb-4">Te has registrado exitosamente.</p>
+          <button
+            onClick={() => {
+              setModalIsOpen(false);
+              window.location.href = '/login';
+            }}
+            className="px-4 py-2 bg-yellow-400 text-black rounded-md hover:bg-yellow-500"
+          >
+            Iniciar sesión
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };
