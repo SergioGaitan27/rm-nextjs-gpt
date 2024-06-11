@@ -3,7 +3,7 @@ import { signIn } from 'next-auth/react';
 import Link from 'next/link';
 
 const LoginPage = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');  // Cambiado de username a email
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -11,7 +11,7 @@ const LoginPage = () => {
     event.preventDefault();
     const result = await signIn('credentials', {
       redirect: false, 
-      username,
+      email,  // Actualizado para usar email
       password,
     });
 
@@ -41,17 +41,17 @@ const LoginPage = () => {
           <input type="hidden" name="remember" defaultValue="true" />
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="username" className="sr-only">Nombre de usuario</label>
+              <label htmlFor="email" className="sr-only">Correo Electrónico</label>
               <input
-                id="username"
-                name="username"
-                type="text"
-                autoComplete="username"
+                id="email"
+                name="email"
+                type="email"  // Asegurándose que el tipo sea email para validación automática
+                autoComplete="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-700 placeholder-gray-500 text-white bg-gray-800 rounded-t-md focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 focus:z-10 sm:text-sm"
-                placeholder="Nombre de usuario"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Correo electrónico"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div>

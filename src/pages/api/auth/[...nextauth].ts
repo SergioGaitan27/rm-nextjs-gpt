@@ -9,7 +9,7 @@ export default NextAuth({
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        username: { label: 'Username', type: 'text' },
+        email: { label: 'Email', type: 'text' },  // Cambiado de username a email
         password: { label: 'Password', type: 'password' }
       },
       authorize: async (credentials) => {
@@ -19,7 +19,7 @@ export default NextAuth({
 
         await connectDB();
 
-        const user = await User.findOne({ username: credentials.username });
+        const user = await User.findOne({ email: credentials.email });  // Cambiado para buscar por email
 
         if (!user) {
           throw new Error('Usuario no encontrado');

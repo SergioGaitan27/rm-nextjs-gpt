@@ -1,20 +1,11 @@
-import { useSession, signOut } from 'next-auth/react';
+import Layout from '../components/Layout';
 
 const DashboardPage = () => {
-  const { data: session } = useSession({
-    required: true, // Redirigir al login si no hay sesión
-    onUnauthenticated() {
-      // Función opcional que se ejecuta si no se autentica
-      window.location.href = '/login';
-    },
-  });
-
   return (
-    <div>
-      <h1>Dashboard</h1>
-      <p>Bienvenido, {session?.user?.email}!</p>
-      <button onClick={() => signOut()}>Cerrar sesión</button>
-    </div>
+    <Layout>
+      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <p>Contenido principal del dashboard...</p>
+    </Layout>
   );
 };
 

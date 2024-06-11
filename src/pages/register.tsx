@@ -20,6 +20,10 @@ const RegisterPage = () => {
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
   const [modalIsOpen, setModalIsOpen] = useState(false);
 
+  const allValidationsPassed = () => {
+    return Object.values(passwordValidations).every(value => value === true);
+  };
+
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -32,9 +36,24 @@ const RegisterPage = () => {
     const number = /\d/.test(password);
     const specialChar = /[@$!%*?&]/.test(password);
 
-    setPasswordValidations({ length, uppercase, lowercase, number, specialChar });
+    const validations = { length, uppercase, lowercase, number, specialChar };
+    setPasswordValidations(validations);
 
-    return length && uppercase && lowercase && number && specialChar;
+    // Evalúa todos los criterios de validación aquí mismo
+    const allValid = Object.values(validations).every(value => value === true);
+    setShowPasswordRequirements(!allValid); // Actualiza la visibilidad aquí
+    return allValid;
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    validatePassword(newPassword); // Llama a validatePassword aquí para actualizar las validaciones
+  };
+  
+  const handlePasswordKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const newPassword = (e.target as HTMLInputElement).value;
+    setShowPasswordRequirements(!allValidationsPassed()); // Evalúa la necesidad de mostrar los requisitos
   };
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,10 +70,6 @@ const RegisterPage = () => {
     }
   };
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPassword(e.target.value);
-    validatePassword(e.target.value);
-  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -158,9 +173,8 @@ const RegisterPage = () => {
                 className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${errors.password ? 'border-red-500' : 'border-gray-700'} placeholder-gray-500 text-white bg-gray-800 rounded-b-md focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 focus:z-10 sm:text-sm`}
                 placeholder="Contraseña"
                 value={password}
-                onChange={handlePasswordChange}
-                onBlur={() => setShowPasswordRequirements(false)}
-                onFocus={() => setShowPasswordRequirements(true)}
+                onChange={handlePasswordChange} // Maneja el cambio de valor
+                onKeyUp={handlePasswordKeyUp}   // Actualiza la visibilidad de los requisitos
               />
               {errors.password && <p className="text-red-500 text-xs mt-1 mb-1.5">{errors.password}</p>}
               {showPasswordRequirements && (
@@ -191,7 +205,7 @@ const RegisterPage = () => {
           </div>
 
           <div>
-          <button type="submit"
+            <button type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
             >
               Registrarse
@@ -199,14 +213,13 @@ const RegisterPage = () => {
           </div>
         </form>
       </div>
-
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={() => setModalIsOpen(false)}
         className="fixed inset-0 flex items-center justify-center p-4 bg-black bg-opacity-75"
         overlayClassName="fixed inset-0 bg-black bg-opacity-50"
       >
-        <div className="bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+        <div className="bg-black rounded-lg shadow-xl p-6 max-w-sm w-full text-center border border-yellow-300">  {/* Añadido border border-yellow-400 */}
           <h2 className="text-2xl font-bold text-white mb-4">Registro exitoso</h2>
           <p className="text-gray-400 mb-4">Te has registrado exitosamente.</p>
           <button
