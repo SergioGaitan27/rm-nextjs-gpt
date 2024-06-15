@@ -1,7 +1,7 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { connectDB } from '@/app/libs/mongodb';
-import User from '@/models/User';  // Asegúrate de que la ruta del import es correcta
+import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 
 export default NextAuth({
@@ -9,7 +9,7 @@ export default NextAuth({
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'text' },  // Cambiado de username a email
+        email: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' }
       },
       authorize: async (credentials) => {
@@ -19,7 +19,7 @@ export default NextAuth({
 
         await connectDB();
 
-        const user = await User.findOne({ email: credentials.email });  // Cambiado para buscar por email
+        const user = await User.findOne({ email: credentials.email });
 
         if (!user) {
           throw new Error('Usuario no encontrado');
@@ -51,6 +51,8 @@ export default NextAuth({
         session.user = session.user ?? {};
         session.user.id = token.id;
         session.user.role = token.role;
+        session.user.email = token.email;
+        session.user.name = token.name;
       }
       return session;
     }
