@@ -96,11 +96,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         if (fields.stockLocations) {
           try {
             const stockLocationsValue = Array.isArray(fields.stockLocations) ? fields.stockLocations[0] : fields.stockLocations;
-            if (typeof stockLocationsValue === 'string') {
-              updateFields.stockLocations = JSON.parse(stockLocationsValue);
-            } else {
-              updateFields.stockLocations = stockLocationsValue;
-            }
+            updateFields.stockLocations = JSON.parse(stockLocationsValue);
           } catch (parseError) {
             console.error('Formato inválido para stockLocations:', parseError);
             return res.status(400).json({ message: 'Formato inválido para stockLocations' });

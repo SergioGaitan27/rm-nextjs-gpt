@@ -12,7 +12,7 @@ export const config = {
 };
 
 interface ProductFields {
-  [key: string]: any;  // Permite cualquier propiedad con valor de cualquier tipo
+  [key: string]: any;
   boxCode?: string;
   productCode?: string;
   name?: string;
@@ -34,7 +34,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   await connectDB();
 
   if (req.method === 'POST') {
-    const form = new formidable.IncomingForm({
+    const form = formidable({
       uploadDir: path.join(process.cwd(), 'public/uploads'),
       keepExtensions: true,
     });
@@ -44,11 +44,16 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         return res.status(500).json({ message: 'Error procesando la carga de archivos' });
       }
 
+      console.log('Campos recibidos:', fields); // <-- Añade esto
+
       if (!fields) {
         return res.status(400).json({ message: 'No se recibieron datos en el formulario' });
       }
 
-      // Aquí usamos la interfaz para parsedFields
+      // Comprobamos que stockLocations esté definido y no vacío
+      const stockLocationsString = Array.isArray(fields.stockLocations) ? fields.stockLocations[0] : fields.stockLocations;
+      const stockLocations = stockLocationsString ? JSON.parse(stockLocationsString) : [];
+
       const parsedFields: ProductFields = {
         boxCode: Array.isArray(fields.boxCode) ? fields.boxCode[0] : fields.boxCode,
         productCode: Array.isArray(fields.productCode) ? fields.productCode[0] : fields.productCode,
@@ -63,10 +68,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         price3MinQty: Array.isArray(fields.price3MinQty) ? Number(fields.price3MinQty[0]) : Number(fields.price3MinQty),
         price4: fields.price4 ? (Array.isArray(fields.price4) ? Number(fields.price4[0]) : Number(fields.price4)) : undefined,
         price5: fields.price5 ? (Array.isArray(fields.price5) ? Number(fields.price5[0]) : Number(fields.price5)) : undefined,
-        stockLocations: typeof fields.stockLocations === 'string' ? JSON.parse(fields.stockLocations) : undefined,
+        stockLocations,
       };
 
-      // Validaciones básicas
       if (!parsedFields.boxCode || !parsedFields.productCode || !parsedFields.name) {
         return res.status(400).json({ message: 'Campos boxCode, productCode, y name son necesarios.' });
       }
@@ -78,9 +82,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       }
 
       try {
-        const newProduct = new Product({          ...parsedFields,
-          imageUrl,
-        });
+        const newProduct = new Product({ ...parsedFields, imageUrl });
 
         const savedProduct = await newProduct.save();
         return res.status(201).json({ message: 'Producto registrado exitosamente', productId: savedProduct._id });
@@ -97,80 +99,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       console.error('Error obteniendo los productos:', error);
       return res.status(500).json({ message: 'Error interno del servidor' });
     }
-  } else if (req.method === 'PUT') {
-    const { id } = req.query;
-
-    if (!id || typeof id !== 'string') {
-      return res.status(400).json({ message: 'ID del producto no proporcionado' });
-    }
-
-    const form = new formidable.IncomingForm({
-      uploadDir: path.join(process.cwd(), 'public/uploads'),
-      keepExtensions: true,
-    });
-
-    form.parse(req, async (err, fields, files) => {
-      if (err) {
-        return res.status(500).json({ message: 'Error procesando la carga de archivos' });
-      }
-    
-      if (!fields) {
-        return res.status(400).json({ message: 'No se recibieron datos en el formulario' });
-      }
-
-      const updateFields: ProductFields = {};
-
-      const fieldNames = [
-        'boxCode',
-        'productCode',
-        'name',
-        'piecesPerBox',
-        'cost',
-        'price1',
-        'price1MinQty',
-        'price2',
-        'price2MinQty',
-        'price3',
-        'price3MinQty',
-        'price4',
-        'price5',
-        'stockLocations',
-      ];
-
-      fieldNames.forEach(field => {
-        if (fields && fields[field] !== undefined) {
-          // El uso de aserción de tipos para asegurar que el acceso a la propiedad es válido.
-          const fieldValue = fields[field as keyof typeof fields];
-          updateFields[field as keyof ProductFields] = Array.isArray(fieldValue) ? fieldValue[0] : fieldValue;
-        }
-      });
-
-      if (fields.stockLocations) {
-        try {
-          // Verifica si stockLocations es un array y usa JSON.stringify para convertirlo a string
-          const stockLocationsValue = Array.isArray(fields.stockLocations) ? fields.stockLocations[0] : fields.stockLocations;
-          updateFields.stockLocations = JSON.parse(stockLocationsValue);
-        } catch (parseError) {
-          return res.status(400).json({ message: 'Formato inválido para stockLocations' });
-        }
-      }
-
-      if (files.image) {
-        const file = Array.isArray(files.image) ? files.image[0] : files.image;
-        updateFields.imageUrl = `/uploads/${file.newFilename}`;
-      }
-
-      try {
-        const updatedProduct = await Product.findByIdAndUpdate(id, updateFields, { new: true });
-        if (!updatedProduct) {
-          return res.status(404).json({ message: 'Producto no encontrado' });
-        }
-        return res.status(200).json({ message: 'Producto actualizado exitosamente', product: updatedProduct });
-      } catch (error) {
-        console.error('Error actualizando el producto:', error);
-        return res.status(500).json({ message: 'Error interno del servidor' });
-      }
-    });
   } else {
     return res.status(405).json({ message: 'Método no permitido' });
   }

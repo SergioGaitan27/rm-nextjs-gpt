@@ -61,13 +61,13 @@ const Products = () => {
         <nav className="mb-8">
           <ul className="flex space-x-4">
             <li>
-              <Link href="/products/new" legacyBehavior>
-                <a className="text-yellow-400 hover:text-yellow-300">Nuevo producto</a>
+              <Link href="/products/new">
+                Nuevo producto
               </Link>
             </li>
             <li>
-              <Link href="/products/edit" legacyBehavior>
-                <a className="text-yellow-400 hover:text-yellow-300">Modificar producto</a>
+              <Link href="/products/edit">
+                Modificar producto
               </Link>
             </li>
           </ul>
@@ -82,44 +82,44 @@ const Products = () => {
               onChange={handleSearchChange}
             />
           </div>
-          <div className="overflow-x-auto max-h-96">
+          <div className="max-w-full">
             <table className="table-auto w-full bg-white border border-gray-300">
               <thead>
                 <tr className="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-                  <th className="py-3 px-6 text-center border border-gray-300">Código de caja</th>
-                  <th className="py-3 px-6 text-center border border-gray-300">Código de producto</th>
-                  <th className="py-3 px-6 text-center border border-gray-300">Nombre del producto</th>
-                  <th className="py-3 px-6 text-center border border-gray-300">Número de piezas por caja</th>
-                  <th className="py-3 px-6 text-center border border-gray-300">Costo</th>
-                  <th className="py-3 px-6 text-center border border-gray-300">Precio menudeo</th>
-                  <th className="py-3 px-6 text-center border border-gray-300">A partir de</th>
-                  <th className="py-3 px-6 text-center border border-gray-300">Precio mayoreo</th>
-                  <th className="py-3 px-6 text-center border border-gray-300">A partir de</th>
-                  <th className="py-3 px-6 text-center border border-gray-300">Precio caja</th>
-                  <th className="py-3 px-6 text-center border border-gray-300">A partir de</th>
-                  <th className="py-3 px-6 text-center border border-gray-300">Precio 4</th>
-                  <th className="py-3 px-6 text-center border border-gray-300">Precio 5</th>
-                  <th className="py-3 px-6 text-center border border-gray-300">Ubicación</th>
-                  <th className="py-3 px-6 text-center border border-gray-300">Imagen</th>
+                  <th className="py-1 px-1 text-center border border-gray-300">Código de caja</th>
+                  <th className="py-1 px-1 text-center border border-gray-300">Código de producto</th>
+                  <th className="py-1 px-1 text-center border border-gray-300 w-[60px]">Nombre del producto</th>
+                  <th className="py-1 px-1 text-center border border-gray-300">#Piezas X Caja</th>
+                  <th className="py-1 px-1 text-center border border-gray-300">Costo</th>
+                  <th className="py-1 px-1 text-center border border-gray-200 bg-gray-300">Precio menudeo</th>
+                  <th className="py-1 px-1 text-center border border-gray-200 bg-gray-300">A partir de</th>
+                  <th className="py-1 px-1 text-center border border-gray-300">Precio mayoreo</th>
+                  <th className="py-1 px-1 text-center border border-gray-300">A partir de</th>
+                  <th className="py-1 px-1 text-center border border-gray-200 bg-gray-300">Precio caja</th>
+                  <th className="py-1 px-1 text-center border border-gray-200 bg-gray-300">A partir de</th>
+                  <th className="py-1 px-1 text-center border border-gray-300">Precio 4</th>
+                  <th className="py-1 px-1 text-center border border-gray-300">Precio 5</th>
+                  <th className="py-1 px-1 text-center border border-gray-300">Ubicación</th>
+                  <th className="py-1 px-6 text-center border border-gray-300">Imagen</th>
                 </tr>
               </thead>
               <tbody className="text-gray-600 text-sm font-light">
                 {filteredProducts.map((product) => (
                   <tr key={product._id} className="border-b border-gray-200 hover:bg-gray-100">
-                    <td className="py-3 px-6 text-center whitespace-nowrap border border-gray-300">{product.boxCode}</td>
-                    <td className="py-3 px-6 text-center whitespace-nowrap border border-gray-300">{product.productCode}</td>
-                    <td className="py-3 px-6 text-center whitespace-nowrap border border-gray-300">{product.name}</td>
-                    <td className="py-3 px-6 text-center whitespace-nowrap border border-gray-300">{product.piecesPerBox}</td>
-                    <td className="py-3 px-6 text-center whitespace-nowrap border border-gray-300">${product.cost}</td>
-                    <td className="py-3 px-6 text-center whitespace-nowrap border border-gray-300">${product.price1}</td>
-                    <td className="py-3 px-6 text-center whitespace-nowrap border border-gray-300">{product.price1MinQty}</td>
-                    <td className="py-3 px-6 text-center whitespace-nowrap border border-gray-300">${product.price2}</td>
-                    <td className="py-3 px-6 text-center whitespace-nowrap border border-gray-300">{product.price2MinQty}</td>
-                    <td className="py-3 px-6 text-center whitespace-nowrap border border-gray-300">${product.price3}</td>
-                    <td className="py-3 px-6 text-center whitespace-nowrap border border-gray-300">{product.price3MinQty}</td>
-                    <td className="py-3 px-6 text-center whitespace-nowrap border border-gray-300">${product.price4}</td>
-                    <td className="py-3 px-6 text-center whitespace-nowrap border border-gray-300">${product.price5}</td>
-                    <td className="py-3 px-6 text-center whitespace-nowrap border border-gray-300">
+                    <td className="py-3 px-3 text-center whitespace-nowrap border border-gray-300">{product.boxCode}</td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap border border-gray-300">{product.productCode}</td>
+                    <td className="py-3 px-3 text-center border border-gray-300 break-words">{product.name}</td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap border border-gray-300">{product.piecesPerBox}</td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap border border-gray-300">${product.cost}</td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap border border-gray-200 bg-gray-300">${product.price1}</td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap border border-gray-200 bg-gray-300">{product.price1MinQty}</td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap border border-gray-300">${product.price2}</td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap border border-gray-300">{product.price2MinQty}</td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap border border-gray-200 bg-gray-300">${product.price3}</td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap border border-gray-200 bg-gray-300">{product.price3MinQty}</td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap border border-gray-300">${product.price4}</td>
+                    <td className="py-3 px-3 text-center whitespace-nowrap border border-gray-300">${product.price5}</td>
+                    <td className="py-1 px-1 text-center whitespace-nowrap border border-gray-300">
                       {product.stockLocations.map((location, index) => (
                         <div key={index}>
                           {location.location}: {location.quantity}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import Modal from 'react-modal';
@@ -27,7 +27,7 @@ interface IProduct {
   price5?: number;
   stockLocations: IStockLocation[];
   imageUrl?: string;
-  image?: File; // Asegúrate de que esta línea esté presente
+  image?: File;
   createdAt: string;
   updatedAt: string;
 }
@@ -42,10 +42,10 @@ const EditProduct = () => {
     price4: '',
     price5: '',
   });
-  const [isFormValid, setIsFormValid] = useState(false);
   const [products, setProducts] = useState<IProduct[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [imageContainerSize, setImageContainerSize] = useState(200); // Tamaño del contenedor de la imagen
   const router = useRouter();
   const { id } = router.query;
 
@@ -66,7 +66,6 @@ const EditProduct = () => {
       const fetchProduct = async () => {
         try {
           const response = await axios.get(`/api/products/${selectedProductId}`);
-          console.log('Fetched product data:', response.data);
           setProductData(response.data);
         } catch (error) {
           console.error('Error fetching product:', error);
@@ -76,21 +75,30 @@ const EditProduct = () => {
     }
   }, [selectedProductId]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, index?: number) => {
     const { name, value } = e.target;
-    setProductData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (typeof index === 'number') {
+      const stockLocations = [...(productData.stockLocations || [])];
+      stockLocations[index] = { ...stockLocations[index], [name]: value };
+      setProductData({ ...productData, stockLocations });
+    } else {
+      setProductData({ ...productData, [name]: value });
+    }
   };
 
-  const handleNumericChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNumericChange = (e: React.ChangeEvent<HTMLInputElement>, index?: number) => {
     const { name, value } = e.target;
     if (/^\d*\.?\d*$/.test(value)) {
-      setProductData((prev) => ({
-        ...prev,
-        [name]: value !== '' ? parseFloat(value) : undefined,
-      }));
+      if (typeof index === 'number') {
+        const stockLocations = [...(productData.stockLocations || [])];
+        stockLocations[index] = { ...stockLocations[index], [name]: parseFloat(value) };
+        setProductData({ ...productData, stockLocations });
+      } else {
+        setProductData(prev => ({ ...prev, [name]: parseFloat(value) }));
+        if (['price1', 'price2', 'price3', 'price4', 'price5'].includes(name)) {
+          validatePrice(name, parseFloat(value));
+        }
+      }
     }
   };
 
@@ -100,7 +108,7 @@ const EditProduct = () => {
       setProductData((prev) => ({
         ...prev,
         image: file,
-        imageUrl: URL.createObjectURL(file), // create a temporary URL for preview
+        imageUrl: URL.createObjectURL(file),
       }));
     }
   };
@@ -131,28 +139,21 @@ const EditProduct = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData();
-  
+
     Object.keys(productData).forEach((key) => {
       const value = productData[key as keyof IProduct];
       if (value !== undefined && value !== null) {
         if (key === 'image' && value instanceof File) {
           formData.append(key, value);
         } else if (key === 'stockLocations') {
-          formData.append(key, JSON.stringify(value)); // Asegurarse de enviar stockLocations como string JSON
+          formData.append(key, JSON.stringify(value));
         } else {
           formData.append(key, value.toString());
         }
       }
     });
-  
+
     try {
-      // Convertir formData a un objeto para loguearlo
-      const logData: { [key: string]: any } = {};
-      formData.forEach((value, key) => {
-        logData[key] = value;
-      });
-      console.log('Enviando datos:', logData);
-  
       const response = await axios.put(`/api/products/${selectedProductId}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -168,50 +169,6 @@ const EditProduct = () => {
     }
   };
 
-  const checkFormValidity = useCallback(() => {
-    const {
-      boxCode,
-      productCode,
-      name,
-      piecesPerBox,
-      cost,
-      price1,
-      price1MinQty,
-      price2,
-      price2MinQty,
-      price3,
-      price3MinQty,
-      price4,
-      price5,
-      stockLocations,
-      image,
-    } = productData;
-
-    const isFormFilled = [
-      boxCode,
-      productCode,
-      name,
-      piecesPerBox,
-      cost,
-      price1,
-      price1MinQty,
-      price2,
-      price2MinQty,
-      price3,
-      price3MinQty,
-      price4,
-      price5,
-      stockLocations,
-      image,
-    ].some((field) => field !== undefined && field !== '');
-
-    setIsFormValid(isFormFilled);
-  }, [productData]);
-
-  useEffect(() => {
-    checkFormValidity();
-  }, [productData, checkFormValidity]);
-
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -219,25 +176,28 @@ const EditProduct = () => {
   return (
     <Layout>
       <div className="p-4 bg-gray-800 text-white rounded-lg">
-        <div className="mb-4">
-          <input
-            type="text"
-            placeholder="Buscar producto por nombre"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            className="w-full p-2 border border-gray-300 rounded text-black"
-          />
-        </div>
-        <ul className="max-h-40 overflow-y-auto mb-4">
-          {filteredProducts.map((product) => (
-            <li
-              key={product._id}
-              className={`p-2 cursor-pointer ${selectedProductId === product._id ? 'bg-yellow-400 text-black' : ''}`}
-              onClick={() => handleProductSelect(product._id)}
-            >
-              {product.name} -- {product.boxCode}
-            </li>
-          ))}
+        {!selectedProductId && (
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Buscar producto"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className="w-full p-2 border border-gray-300 rounded text-black"
+            />
+          </div>
+        )}
+        <ul className="mb-4">
+          {!selectedProductId &&
+            filteredProducts.map((product) => (
+              <li
+                key={product._id}
+                className={`p-2 cursor-pointer ${selectedProductId === product._id ? 'bg-yellow-400 text-black' : ''}`}
+                onClick={() => handleProductSelect(product._id)}
+              >
+                {product.name}
+              </li>
+            ))}
         </ul>
         {selectedProductId && productData && (
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -288,18 +248,26 @@ const EditProduct = () => {
                 <div>
                   <label className="block mb-2">Imagen del producto:</label>
                   {productData.imageUrl ? (
-                    <div className="flex items-center">
-                      <Image
-                        src={productData.imageUrl}
-                        alt="Product"
-                        width={64}
-                        height={64}
-                        className="object-cover mr-2"
-                      />
+                    <div className="flex flex-col items-center">
+                      <div
+                        style={{
+                          width: `${imageContainerSize}px`,
+                          height: `${imageContainerSize}px`,
+                          position: 'relative',
+                        }}
+                      >
+                        <Image
+                          src={productData.imageUrl}
+                          alt="Product"
+                          layout="fill"
+                          objectFit="cover"
+                          style={{ borderRadius: '8px' }}
+                        />
+                      </div>
                       <button
                         type="button"
                         onClick={() => setProductData(prev => ({ ...prev, imageUrl: undefined, image: undefined }))}
-                        className="bg-red-500 text-white p-2 rounded"
+                        className="mt-2 bg-red-500 text-white p-2 rounded"
                       >
                         Eliminar
                       </button>
@@ -418,10 +386,10 @@ const EditProduct = () => {
                 </div>
               </div>
             </fieldset>
+
             <button
               type="submit"
-              className={`bg-blue-500 text-white p-2 rounded w-full ${!isFormValid ? 'opacity-50 cursor-not-allowed' : ''}`}
-              disabled={!isFormValid}
+              className="bg-blue-500 text-white p-2 rounded w-full"
             >
               Actualizar Producto
             </button>
