@@ -70,8 +70,8 @@ const Layout = ({ children }: LayoutProps) => {
       case '/products/new':
         setPageTitle('Nuevo Producto');
         break;
-      case '/products/edit':
-        setPageTitle('Modificar Producto');
+        case '/transfers':
+        setPageTitle('Trasladar Stock');
         break;
       case '/reports':
         setPageTitle('Reportes');
@@ -117,6 +117,12 @@ const Layout = ({ children }: LayoutProps) => {
             <a title="/products" className={`flex items-center hover:bg-yellow-500 hover:text-black rounded transition duration-300 ease-in-out transform hover:scale-110 p-2 ${spacingBetweenCategoryIcons}`}>
               <span className={`${categoryIconSize}`}>📦</span>
               {isSidebarOpen && <span className="ml-2 text-xl font-semibold" style={{ marginLeft: `${iconTextSpacing}px` }}>Productos</span>}
+            </a>
+          </Link>
+          <Link href="/transfers" legacyBehavior>
+            <a title="/transfers" className={`flex items-center hover:bg-yellow-500 hover:text-black rounded transition duration-300 ease-in-out transform hover:scale-110 p-2 ${spacingBetweenCategoryIcons}`}>
+              <span className={`${categoryIconSize}`}>🔂</span>
+              {isSidebarOpen && <span className="ml-2 text-xl font-semibold" style={{ marginLeft: `${iconTextSpacing}px` }}>Trasladar Stock</span>}
             </a>
           </Link>
           <Link href="/reports" legacyBehavior>

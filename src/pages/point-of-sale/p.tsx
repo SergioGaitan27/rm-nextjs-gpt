@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Layout from '@/components/Layout';
-import Modal from 'react-modal';
 
 interface StockLocation {
   location: string;
@@ -35,8 +34,6 @@ const PointOfSale = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartProduct[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [modalMessage, setModalMessage] = useState('');
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -56,16 +53,8 @@ const PointOfSale = () => {
   };
 
   const handleAddToCart = (product: Product) => {
-    const totalStock = product.stockLocations.reduce((total, loc) => total + loc.quantity, 0);
-    const existingProduct = cart.find(item => item._id === product._id);
-    const existingQuantity = existingProduct ? existingProduct.quantity : 0;
-    if (existingQuantity + 1 > totalStock) {
-      setModalMessage('No hay suficiente existencia para agregar más piezas de este producto.');
-      setModalIsOpen(true);
-      return;
-    }
-
     setCart(prevCart => {
+      const existingProduct = prevCart.find(item => item._id === product._id);
       if (existingProduct) {
         return prevCart.map(item =>
           item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
@@ -81,13 +70,6 @@ const PointOfSale = () => {
   };
 
   const handleQuantityChange = (product: CartProduct, quantity: number) => {
-    const totalStock = product.stockLocations.reduce((total, loc) => total + loc.quantity, 0);
-    if (quantity > totalStock) {
-      setModalMessage('No hay suficiente existencia para agregar más piezas de este producto.');
-      setModalIsOpen(true);
-      return;
-    }
-
     setCart(prevCart =>
       prevCart.map(item =>
         item._id === product._id ? { ...item, quantity: Math.max(1, quantity) } : item
@@ -112,11 +94,6 @@ const PointOfSale = () => {
     }, 0);
   };
 
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    product.productCode.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
     <Layout>
       <div className="p-4 bg-gray-800 text-white rounded-lg h-[99%] flex flex-col">
@@ -134,42 +111,43 @@ const PointOfSale = () => {
             <h2 className="text-xl font-bold mb-4">Productos</h2>
             <div className="flex-1 overflow-y-auto">
               <div className="flex flex-col gap-4">
-                {filteredProducts.map(product => (
-                  <div key={product._id} className="bg-gray-800 p-4 rounded flex flex-row items-center">
-                    {product.imageUrl && (
-                      <div className="relative w-24 h-24 mr-4">
-                        <Image
-                          src={product.imageUrl}
-                          alt={product.name}
-                          layout="fill"
-                          objectFit="cover"
-                          className="rounded"
-                        />
+                {products
+                  .filter(product => product.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .map(product => (
+                    <div key={product._id} className="bg-gray-800 p-4 rounded flex flex-row items-center">
+                      {product.imageUrl && (
+                        <div className="relative w-24 h-24 mr-4">
+                          <Image
+                            src={product.imageUrl}
+                            alt={product.name}
+                            layout="fill"
+                            objectFit="cover"
+                            className="rounded"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold mb-2">{product.name}</h3>
+                        <p className="text-gray-300 mb-1">Precio menudeo: ${product.price1.toFixed(2)} a partir de {product.price1MinQty} piezas</p>
+                        <p className="text-gray-300 mb-1">Precio mayoreo: ${product.price2.toFixed(2)} a partir de {product.price2MinQty} piezas</p>
+                        <p className="text-gray-300 mb-1">Precio caja: ${product.price3.toFixed(2)} a partir de {product.price3MinQty} piezas</p>
+                        <div className="text-gray-300 mb-1">
+                          <p className="font-bold">Existencia por ubicación:</p>
+                          {product.stockLocations.map((location, index) => (
+                            <p key={index}>
+                              {location.location}: {location.quantity}
+                            </p>
+                          ))}
+                        </div>
                       </div>
-                    )}
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold mb-2">{product.name}</h3>
-                      <p className="text-gray-300 mb-1">Código: {product.productCode}</p>
-                      <p className="text-gray-300 mb-1">Precio menudeo: ${product.price1.toFixed(2)} a partir de {product.price1MinQty} piezas</p>
-                      <p className="text-gray-300 mb-1">Precio mayoreo: ${product.price2.toFixed(2)} a partir de {product.price2MinQty} piezas</p>
-                      <p className="text-gray-300 mb-1">Precio caja: ${product.price3.toFixed(2)} a partir de {product.price3MinQty} piezas</p>
-                      <div className="text-gray-300 mb-1">
-                        <p className="font-bold">Existencia por ubicación:</p>
-                        {product.stockLocations.map((location, index) => (
-                          <p key={index}>
-                            {location.location}: {location.quantity}
-                          </p>
-                        ))}
-                      </div>
+                      <button
+                        className="bg-green-500 text-white p-4 rounded ml-4 text-lg font-bold"
+                        onClick={() => handleAddToCart(product)}
+                      >
+                        Agregar a la nota
+                      </button>
                     </div>
-                    <button
-                      className="bg-green-500 text-white p-4 rounded ml-4 text-lg font-bold"
-                      onClick={() => handleAddToCart(product)}
-                    >
-                      Agregar a la nota
-                    </button>
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
           </div>
@@ -223,7 +201,7 @@ const PointOfSale = () => {
                         onClick={() => handleRemoveFromCart(product)}
                       >
                         Eliminar
-                        </button>
+                      </button>
                     </div>
                   );
                 })}
@@ -243,23 +221,6 @@ const PointOfSale = () => {
           </div>
         </div>
       </div>
-      <Modal
-        isOpen={modalIsOpen}
-        onRequestClose={() => setModalIsOpen(false)}
-        className="fixed inset-0 flex items-center justify-center p-4 bg-black bg-opacity-75"
-        overlayClassName="fixed inset-0 bg-black bg-opacity-50"
-      >
-        <div className="bg-black rounded-lg shadow-xl p-6 max-w-sm w-full text-center border border-yellow-300">
-          <h2 className="text-2xl font-bold text-white mb-4">Error</h2>
-          <p className="text-gray-400 mb-4">{modalMessage}</p>
-          <button
-            onClick={() => setModalIsOpen(false)}
-            className="px-4 py-2 bg-yellow-400 text-black rounded-md hover:bg-yellow-500"
-          >
-            Cerrar
-          </button>
-        </div>
-      </Modal>
     </Layout>
   );
 };

@@ -44,13 +44,12 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         return res.status(500).json({ message: 'Error procesando la carga de archivos' });
       }
 
-      console.log('Campos recibidos:', fields); // <-- Añade esto
+      console.log('Campos recibidos:', fields);
 
       if (!fields) {
         return res.status(400).json({ message: 'No se recibieron datos en el formulario' });
       }
 
-      // Comprobamos que stockLocations esté definido y no vacío
       const stockLocationsString = Array.isArray(fields.stockLocations) ? fields.stockLocations[0] : fields.stockLocations;
       const stockLocations = stockLocationsString ? JSON.parse(stockLocationsString) : [];
 
@@ -70,6 +69,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         price5: fields.price5 ? (Array.isArray(fields.price5) ? Number(fields.price5[0]) : Number(fields.price5)) : undefined,
         stockLocations,
       };
+
+      console.log('Campos procesados:', parsedFields);
 
       if (!parsedFields.boxCode || !parsedFields.productCode || !parsedFields.name) {
         return res.status(400).json({ message: 'Campos boxCode, productCode, y name son necesarios.' });
