@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Layout from '@/components/Layout';
 import Modal from 'react-modal';
@@ -37,6 +37,8 @@ const PointOfSale = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const imageSize = 200; // Variable para modificar el tamaño del contenedor de la imagen
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -51,8 +53,14 @@ const PointOfSale = () => {
     fetchProducts();
   }, []);
 
+  useEffect(() => {
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, []);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    setSearchTerm(e.target.value.toUpperCase());
   };
 
   const handleAddToCart = (product: Product) => {
@@ -67,13 +75,19 @@ const PointOfSale = () => {
 
     setCart(prevCart => {
       if (existingProduct) {
-        return prevCart.map(item =>
-          item._id === product._id ? { ...item, quantity: item.quantity + 1 } : item
-        );
+        return [ 
+          { ...existingProduct, quantity: existingProduct.quantity + 1 },
+          ...prevCart.filter(item => item._id !== product._id)
+        ];
       } else {
-        return [...prevCart, { ...product, quantity: 1 }];
+        return [{ ...product, quantity: 1 }, ...prevCart];
       }
     });
+
+    setSearchTerm('');
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
   };
 
   const handleRemoveFromCart = (product: CartProduct) => {
@@ -112,88 +126,115 @@ const PointOfSale = () => {
     }, 0);
   };
 
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    product.productCode.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const product = products.find(
+        p => p.boxCode.toLowerCase() === searchTerm.toLowerCase() || p.productCode.toLowerCase() === searchTerm.toLowerCase()
+      );
+      if (product) {
+        handleAddToCart(product);
+      }
+    }
+  };
+
+  const filteredProducts = products.filter((product) =>
+    product.boxCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.productCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const calculateFontSize = (baseSize: number, imageSize: number) => {
+    const factor = imageSize / 180;
+    return `${baseSize / factor}px`;
+  };
 
   return (
     <Layout>
-      <div className="p-4 bg-gray-800 text-white rounded-lg h-[99%] flex flex-col">
-        <div className="mb-4">
+      <div className="p-4 text-white rounded-lg h-[99%] flex flex-col bg-black">
+        <div className="max-w-full mb-4">
           <input
             type="text"
-            placeholder="Buscar producto"
+            className="w-full p-2 border border-gray-300 rounded text-black"
+            placeholder="Buscar productos por código de caja, código de producto o nombre..."
             value={searchTerm}
             onChange={handleSearchChange}
-            className="w-full p-2 border border-gray-300 rounded text-black"
+            onKeyPress={handleKeyPress}
+            ref={searchInputRef}
           />
         </div>
         <div className="flex-1 flex flex-col md:flex-row gap-4 overflow-hidden">
-          <div className="flex-1 bg-gray-700 p-4 rounded shadow-lg flex flex-col">
+          <div className="flex-1 border border-yellow-400 bg-black p-4 rounded shadow-lg flex flex-col">
             <h2 className="text-xl font-bold mb-4">Productos</h2>
             <div className="flex-1 overflow-y-auto">
               <div className="flex flex-col gap-4">
                 {filteredProducts.map(product => (
-                  <div key={product._id} className="bg-gray-800 p-4 rounded flex flex-row items-center">
+                  <div 
+                    key={product._id} 
+                    className="border border-yellow-400 p-4 rounded flex flex-row items-center bg-black cursor-pointer"
+                    onClick={() => handleAddToCart(product)}
+                  >
                     {product.imageUrl && (
-                      <div className="relative w-24 h-24 mr-4">
+                      <div className="relative mr-4" style={{ width: `${imageSize-50}px`, height: `${imageSize}px` }}>
                         <Image
                           src={product.imageUrl}
                           alt={product.name}
                           layout="fill"
-                          objectFit="cover"
+                          objectFit="contain"
                           className="rounded"
                         />
                       </div>
                     )}
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold mb-2">{product.name}</h3>
-                      <p className="text-gray-300 mb-1">Código: {product.productCode}</p>
-                      <p className="text-gray-300 mb-1">Precio menudeo: ${product.price1.toFixed(2)} a partir de {product.price1MinQty} piezas</p>
-                      <p className="text-gray-300 mb-1">Precio mayoreo: ${product.price2.toFixed(2)} a partir de {product.price2MinQty} piezas</p>
-                      <p className="text-gray-300 mb-1">Precio caja: ${product.price3.toFixed(2)} a partir de {product.price3MinQty} piezas</p>
-                      <div className="text-gray-300 mb-1">
-                        <p className="font-bold">Existencia por ubicación:</p>
+                      <h3 className="font-bold mb-2 text-white" style={{ fontSize: calculateFontSize(20, imageSize) }}>
+                        <strong style={{ color: 'yellow' }}>{product.name}</strong>
+                      </h3>
+                      <p className="text-gray-300 mb-1" style={{ fontSize: calculateFontSize(16, imageSize) }}>
+                        <strong style={{ color: 'yellow' }}>Código: </strong>{product.productCode}
+                      </p>
+                      <p className="text-gray-300 mb-1" style={{ fontSize: calculateFontSize(16, imageSize) }}>
+                        <strong style={{ color: 'yellow' }}>Precio menudeo: </strong>${product.price1.toFixed(2)} <strong style={{ color: 'yellow' }}> a partir de </strong>{product.price1MinQty} pieza
+                      </p>
+                      <p className="text-gray-300 mb-1" style={{ fontSize: calculateFontSize(16, imageSize) }}>
+                        <strong style={{ color: 'yellow' }}>Precio mayoreo: </strong>${product.price2.toFixed(2)} <strong style={{ color: 'yellow' }}> a partir de </strong>{product.price2MinQty} piezas
+                      </p>
+                      <p className="text-gray-300 mb-1" style={{ fontSize: calculateFontSize(16, imageSize) }}>
+                        <strong style={{ color: 'yellow' }}>Precio caja: </strong>${product.price3.toFixed(2)} <strong style={{ color: 'yellow' }}> a partir de </strong>{product.price3MinQty} piezas
+                      </p>
+                      <div className="text-gray-300 mb-1" style={{ fontSize: calculateFontSize(16, imageSize) }}>
+                        <strong style={{ color: 'yellow' }}>Existencia por ubicación:</strong>
                         {product.stockLocations.map((location, index) => (
                           <p key={index}>
-                            {location.location}: {location.quantity}
+                            <strong style={{ color: 'yellow' }}>{location.location}: </strong>{location.quantity}
                           </p>
                         ))}
                       </div>
                     </div>
-                    <button
-                      className="bg-green-500 text-white p-4 rounded ml-4 text-lg font-bold"
-                      onClick={() => handleAddToCart(product)}
-                    >
-                      Agregar a la nota
-                    </button>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-          <div className="flex-1 bg-gray-700 p-4 rounded shadow-lg flex flex-col">
+          <div className="flex-1 border border-yellow-400 bg-black p-4 rounded shadow-lg flex flex-col">
             <h2 className="text-xl font-bold mb-4">Carrito</h2>
             <div className="flex-1 overflow-y-auto">
               <div className="flex flex-col gap-4">
                 {cart.map(product => {
                   const { price, type } = getApplicablePrice(product);
                   return (
-                    <div key={product._id} className="bg-gray-800 p-4 rounded flex flex-row items-center">
+                    <div key={product._id} className="border border-yellow-400 p-4 rounded flex flex-row items-center bg-black">
                       {product.imageUrl && (
-                        <div className="relative w-24 h-24 mr-4">
+                        <div className="relative mr-4" style={{ width: `${imageSize}px`, height: `${imageSize}px` }}>
                           <Image
                             src={product.imageUrl}
                             alt={product.name}
                             layout="fill"
-                            objectFit="cover"
+                            objectFit="contain"
                             className="rounded"
                           />
                         </div>
                       )}
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold mb-2">{product.name}</h3>
+                        <h3 className="font-bold mb-2 text-white">{product.name}</h3>
                         <p className="text-gray-300 mb-1">Precio: ${price.toFixed(2)} ({type})</p>
                         <div className="flex items-center">
                           <button
@@ -223,22 +264,29 @@ const PointOfSale = () => {
                         onClick={() => handleRemoveFromCart(product)}
                       >
                         Eliminar
-                        </button>
+                      </button>
                     </div>
                   );
                 })}
               </div>
             </div>
-            <div className="mt-4 sticky bottom-0 bg-gray-900 p-4 rounded shadow-lg">
+            <div className="mt-4 bg-black p-4 rounded shadow-lg">
               <div className="flex justify-between mb-4 bg-gray-700 p-2 rounded">
-                <p className="text-lg font-bold">Total piezas:</p>
+                <p className="font-bold">Total piezas:</p>
                 <p className="text-2xl">{getTotalPieces()}</p>
               </div>
               <div className="flex justify-between mb-4 bg-gray-700 p-2 rounded">
-                <p className="text-lg font-bold">Total a pagar:</p>
+                <p className="font-bold">Total a pagar:</p>
                 <p className="text-2xl">${getTotalPrice().toFixed(2)}</p>
               </div>
-              <button className="bg-blue-500 text-white p-2 rounded w-full text-lg font-bold">Pagar</button>
+              <button className="bg-blue-500 text-white p-2 rounded w-full font-bold">Pagar</button>
+              <button
+                type="button"
+                className="bg-red-500 text-white p-2 rounded w-full mt-2"
+                onClick={() => setCart([])}
+              >
+                Cancelar
+              </button>
             </div>
           </div>
         </div>
