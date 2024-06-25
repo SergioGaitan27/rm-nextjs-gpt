@@ -465,6 +465,12 @@ const PointOfSale = () => {
           >
             Confirmar Pago
           </button>
+          <button
+            onClick={() => setPaymentModalIsOpen(false)}
+            className="px-4 py-2 mt-2 w-full bg-red-500 text-white rounded-md hover:bg-red-600"
+          >
+            Cancelar
+          </button>
         </div>
       </Modal>
     </Layout>
