@@ -36,8 +36,17 @@ const PointOfSale = () => {
   const [cart, setCart] = useState<CartProduct[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [paymentModalIsOpen, setPaymentModalIsOpen] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('Efectivo');
+  const [cashAmount, setCashAmount] = useState<number | null>(null);
+  const [cardAmount, setCardAmount] = useState<number | null>(null);
+  const [reference, setReference] = useState('');
   const [modalMessage, setModalMessage] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const cashInputRef = useRef<HTMLInputElement>(null);
+  const cardInputRef = useRef<HTMLInputElement>(null);
+  const mixedCashInputRef = useRef<HTMLInputElement>(null);
+  const mixedCardInputRef = useRef<HTMLInputElement>(null);
   const imageSize = 200; // Variable para modificar el tamaño del contenedor de la imagen
 
   useEffect(() => {
@@ -59,6 +68,20 @@ const PointOfSale = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (paymentModalIsOpen) {
+      setSelectedPaymentMethod('Efectivo');
+      setCashAmount(null);
+      setCardAmount(null);
+      setReference('');
+      setTimeout(() => {
+        if (cashInputRef.current) {
+          cashInputRef.current.focus();
+        }
+      }, 0);
+    }
+  }, [paymentModalIsOpen]);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value.toUpperCase());
   };
@@ -75,7 +98,7 @@ const PointOfSale = () => {
 
     setCart(prevCart => {
       if (existingProduct) {
-        return [ 
+        return [
           { ...existingProduct, quantity: existingProduct.quantity + 1 },
           ...prevCart.filter(item => item._id !== product._id)
         ];
@@ -137,6 +160,22 @@ const PointOfSale = () => {
     }
   };
 
+  const handlePaymentMethodChange = (method: string) => {
+    setSelectedPaymentMethod(method);
+    setCashAmount(null);
+    setCardAmount(null);
+    setReference('');
+    setTimeout(() => {
+      if (method === 'Efectivo' && cashInputRef.current) {
+        cashInputRef.current.focus();
+      } else if (method === 'Tarjeta' && cardInputRef.current) {
+        cardInputRef.current.focus();
+      } else if (method === 'Mixto' && mixedCashInputRef.current) {
+        mixedCashInputRef.current.focus();
+      }
+    }, 0);
+  };
+
   const filteredProducts = products.filter((product) =>
     product.boxCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.productCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -146,6 +185,24 @@ const PointOfSale = () => {
   const calculateFontSize = (baseSize: number, imageSize: number) => {
     const factor = imageSize / 180;
     return `${baseSize / factor}px`;
+  };
+
+  const calculateChange = () => {
+    return (cashAmount ?? 0) - getTotalPrice();
+  };
+
+  const isPaymentButtonDisabled = () => {
+    const totalPrice = getTotalPrice();
+    if (selectedPaymentMethod === 'Efectivo') {
+      return (cashAmount ?? 0) < totalPrice;
+    }
+    if (selectedPaymentMethod === 'Tarjeta') {
+      return !reference;
+    }
+    if (selectedPaymentMethod === 'Mixto') {
+      return ((cashAmount ?? 0) + (cardAmount ?? 0)) < totalPrice;
+    }
+    return true;
   };
 
   return (
@@ -272,14 +329,19 @@ const PointOfSale = () => {
             </div>
             <div className="mt-4 bg-black p-4 rounded shadow-lg">
               <div className="flex justify-between mb-4 bg-gray-700 p-2 rounded">
-                <p className="font-bold">Total piezas:</p>
+                <p className="font-bold text-xl">Total piezas:</p>
                 <p className="text-2xl">{getTotalPieces()}</p>
               </div>
               <div className="flex justify-between mb-4 bg-gray-700 p-2 rounded">
-                <p className="font-bold">Total a pagar:</p>
-                <p className="text-2xl">${getTotalPrice().toFixed(2)}</p>
+                <p className="font-bold text-xl">Total a pagar:</p>
+                <p className="text-3xl text-yellow-400">${getTotalPrice().toFixed(2)}</p>
               </div>
-              <button className="bg-blue-500 text-white p-2 rounded w-full font-bold">Pagar</button>
+              <button 
+                className="bg-blue-500 text-white p-2 rounded w-full font-bold"
+                onClick={() => setPaymentModalIsOpen(true)}
+              >
+                Pagar
+              </button>
               <button
                 type="button"
                 className="bg-red-500 text-white p-2 rounded w-full mt-2"
@@ -305,6 +367,103 @@ const PointOfSale = () => {
             className="px-4 py-2 bg-yellow-400 text-black rounded-md hover:bg-yellow-500"
           >
             Cerrar
+          </button>
+        </div>
+      </Modal>
+      <Modal
+        isOpen={paymentModalIsOpen}
+        onRequestClose={() => setPaymentModalIsOpen(false)}
+        className="fixed inset-0 flex items-center justify-center p-4 bg-black bg-opacity-75"
+        overlayClassName="fixed inset-0 bg-black bg-opacity-50"
+      >
+        <div className="bg-black rounded-lg shadow-xl p-6 max-w-md w-full text-center border border-yellow-300">
+          <h2 className="text-2xl font-bold text-white mb-4">Selecciona el método de pago</h2>
+          <div className="flex justify-around mb-4">
+            <button 
+              className={`px-4 py-2 rounded ${selectedPaymentMethod === 'Efectivo' ? 'bg-yellow-400' : 'bg-gray-700'} text-white`}
+              onClick={() => handlePaymentMethodChange('Efectivo')}
+            >
+              Efectivo
+            </button>
+            <button 
+              className={`px-4 py-2 rounded ${selectedPaymentMethod === 'Tarjeta' ? 'bg-yellow-400' : 'bg-gray-700'} text-white`}
+              onClick={() => handlePaymentMethodChange('Tarjeta')}
+            >
+              Tarjeta
+            </button>
+            <button 
+              className={`px-4 py-2 rounded ${selectedPaymentMethod === 'Mixto' ? 'bg-yellow-400' : 'bg-gray-700'} text-white`}
+              onClick={() => handlePaymentMethodChange('Mixto')}
+            >
+              Mixto
+            </button>
+          </div>
+          <div className="text-yellow-400 text-3xl mb-4">
+            Total a pagar: ${getTotalPrice().toFixed(2)}
+          </div>
+          {selectedPaymentMethod === 'Efectivo' && (
+            <div className="text-white">
+              <p>Ingresa el monto en efectivo:</p>
+              <input 
+                type="number" 
+                className="w-full p-2 rounded text-black mt-2" 
+                placeholder="Monto en efectivo" 
+                value={cashAmount !== null ? cashAmount : ''}
+                onChange={(e) => setCashAmount(parseFloat(e.target.value) || null)}
+                ref={cashInputRef}
+              />
+              <p className="mt-4 text-3xl text-yellow-400">Cambio: ${calculateChange() >= 0 ? calculateChange().toFixed(2) : '0.00'}</p>
+            </div>
+          )}
+          {selectedPaymentMethod === 'Tarjeta' && (
+            <div className="text-white">
+              <p>Referencia:</p>
+              <input 
+                type="text" 
+                className="w-full p-2 rounded text-black mt-2 uppercase" 
+                placeholder="Referencia" 
+                value={reference}
+                onChange={(e) => setReference(e.target.value.toUpperCase())}
+                ref={cardInputRef}
+              />
+            </div>
+          )}
+          {selectedPaymentMethod === 'Mixto' && (
+            <div className="text-white">
+              <p>Ingresa el monto en efectivo:</p>
+              <input 
+                type="number" 
+                className="w-full p-2 rounded text-black mt-2" 
+                placeholder="Monto en efectivo" 
+                value={cashAmount !== null ? cashAmount : ''}
+                onChange={(e) => setCashAmount(parseFloat(e.target.value) || null)}
+                ref={mixedCashInputRef}
+              />
+              <p>Ingresa el monto en tarjeta:</p>
+              <input 
+                type="number" 
+                className="w-full p-2 rounded text-black mt-2" 
+                placeholder="Monto en tarjeta" 
+                value={cardAmount !== null ? cardAmount : ''}
+                onChange={(e) => setCardAmount(parseFloat(e.target.value) || null)}
+                ref={mixedCardInputRef}
+              />
+              <p>Referencia:</p>
+              <input 
+                type="text" 
+                className="w-full p-2 rounded text-black mt-2 uppercase" 
+                placeholder="Referencia" 
+                value={reference}
+                onChange={(e) => setReference(e.target.value.toUpperCase())}
+              />
+            </div>
+          )}
+          <button
+            onClick={() => setPaymentModalIsOpen(false)}
+            className={`px-4 py-2 mt-4 w-full rounded-md ${isPaymentButtonDisabled() ? 'bg-gray-500 text-gray-300' : 'bg-yellow-400 text-black hover:bg-yellow-500'}`}
+            disabled={isPaymentButtonDisabled()}
+          >
+            Confirmar Pago
           </button>
         </div>
       </Modal>
