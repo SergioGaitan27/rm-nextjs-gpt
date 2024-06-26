@@ -19,7 +19,7 @@ export default NextAuth({
 
         await connectDB();
 
-        const user = await User.findOne({ email: credentials.email });
+        const user = await User.findOne({ email: credentials.email }).lean();
 
         if (!user) {
           throw new Error('Usuario no encontrado');
@@ -31,30 +31,50 @@ export default NextAuth({
           throw new Error('Contraseña incorrecta');
         }
 
-        return { id: user._id, name: user.username, email: user.email, role: user.role };
+        return {
+          id: user._id.toString(),
+          name: user.username || '',
+          email: user.email || '',
+          role: user.role || '',
+          location: user.location || '',
+          businessId: user.businessId || '0',
+        };
       }
     })
   ],
   session: {
-    strategy: 'jwt'
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60,  // Tiempo de vida de la sesión en segundos (30 días)
+    updateAge: 24 * 60 * 60,  // Frecuencia con la que se actualiza la sesión en segundos (1 día)
   },
   callbacks: {
     jwt: async ({ token, user }) => {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.location = user.location;
+        token.businessId = user.businessId;
       }
       return token;
     },
     session: async ({ session, token }) => {
       if (token) {
-        session.user = session.user ?? {};
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.email = token.email;
-        session.user.name = token.name;
+        session.user = {
+          ...session.user,
+          id: token.id as string,
+          role: token.role as string,
+          email: token.email as string,
+          name: token.name as string,
+          location: token.location as string,
+          businessId: token.businessId as string,
+        };
       }
       return session;
     }
-  }
+  },
+  pages: {
+    signIn: '/login',
+    error: '/login',  // Redirige a login en caso de error
+  },
+  secret: process.env.NEXTAUTH_SECRET, // Asegúrate de tener el secret configurado
 });

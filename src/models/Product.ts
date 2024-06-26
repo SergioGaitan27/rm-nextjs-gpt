@@ -1,11 +1,11 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Document, Schema, Model } from 'mongoose';
 
-interface IStockLocation {
+interface StockLocation {
   location: string;
   quantity: number;
 }
 
-interface IProduct extends Document {
+interface ProductDocument extends Document {
   boxCode: string;
   productCode: string;
   name: string;
@@ -19,21 +19,18 @@ interface IProduct extends Document {
   price3MinQty: number;
   price4?: number;
   price5?: number;
-  stockLocations: IStockLocation[];
+  stockLocations: StockLocation[];
   imageUrl?: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
-const StockLocationSchema: Schema = new Schema({
-  location: { type: String, required: true },
-  quantity: { type: Number, required: true },
-});
+interface ProductModel extends Model<ProductDocument> {
+  reduceStock(productCode: string, quantity: number): Promise<void>;
+}
 
-const ProductSchema: Schema = new Schema({
+const ProductSchema = new Schema<ProductDocument>({
   boxCode: { type: String, required: true },
   productCode: { type: String, required: true },
-  name: { type: String, required: true }, 
+  name: { type: String, required: true },
   piecesPerBox: { type: Number, required: true },
   cost: { type: Number, required: true },
   price1: { type: Number, required: true },
@@ -42,14 +39,36 @@ const ProductSchema: Schema = new Schema({
   price2MinQty: { type: Number, required: true },
   price3: { type: Number, required: true },
   price3MinQty: { type: Number, required: true },
-  price4: { type: Number, required: false },
-  price5: { type: Number, required: false },
-  stockLocations: { type: [StockLocationSchema], required: true },
+  price4: { type: Number },
+  price5: { type: Number },
+  stockLocations: [{ location: String, quantity: Number }],
   imageUrl: { type: String },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-});
+}, { timestamps: true });
 
-const Product: Model<IProduct> = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);
+ProductSchema.statics.reduceStock = async function (productCode: string, quantity: number) {
+  const product = await this.findOne({ productCode });
+
+  if (product) {
+    let remainingQty = quantity;
+
+    for (const stock of product.stockLocations) {
+      if (stock.quantity >= remainingQty) {
+        stock.quantity -= remainingQty;
+        remainingQty = 0;
+      } else {
+        remainingQty -= stock.quantity;
+        stock.quantity = 0;
+      }
+
+      if (remainingQty === 0) break;
+    }
+
+    await product.save();
+  } else {
+    throw new Error('Producto no encontrado');
+  }
+};
+
+const Product = (mongoose.models.Product || mongoose.model<ProductDocument, ProductModel>('Product', ProductSchema)) as ProductModel;
 
 export default Product;

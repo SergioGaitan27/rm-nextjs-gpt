@@ -37,8 +37,14 @@ export default async function handler(
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
-      // Crear nuevo usuario con rol por defecto 'Administrador'
-      const newUser = new User({ username, email, password: hashedPassword, role: 'Administrador' });
+      // Crear nuevo usuario con rol por defecto 'Administrador' y ubicación 'unknown'
+      const newUser = new User({ 
+        username, 
+        email, 
+        password: hashedPassword, 
+        role: 'Administrador',
+        location: 'unknown' // Ubicación por defecto
+      });
       await newUser.save();
 
       res.status(201).json({ message: 'Usuario registrado correctamente' });

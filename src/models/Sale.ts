@@ -1,19 +1,37 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose from 'mongoose';
 
-interface ISale extends Document {
-  productId: string;
-  quantity: number;
-  salePrice: number;
-  createdAt: Date;
-}
+const SaleSchema = new mongoose.Schema({
+  saleType: {
+    type: String,
+    enum: ['Efectivo', 'Tarjeta', 'Mixto'],
+    required: true,
+  },
+  date: {
+    type: String,
+    required: true,
+  },
+  items: [
+    {
+      description: { type: String, required: true },
+      pieceCode: { type: String, required: true },
+      appliedPrice: { type: Number, required: true },
+      totalPieces: { type: Number, required: true },
+    },
+  ],
+  totalAmount: {
+    type: Number,
+    required: true,
+  },
+  profile: {
+    type: String,
+    required: true,
+  },
+  // Campo adicional para análisis
+  paymentDetails: {
+    cashAmount: { type: Number, default: 0 },
+    cardAmount: { type: Number, default: 0 },
+    reference: { type: String, default: '' },
+  },
+}, { timestamps: true });
 
-const SaleSchema: Schema = new Schema({
-  productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
-  quantity: { type: Number, required: true },
-  salePrice: { type: Number, required: true },
-  createdAt: { type: Date, default: Date.now },
-});
-
-const Sale = mongoose.models.Sale || mongoose.model<ISale>('Sale', SaleSchema);
-
-export default Sale;
+export default mongoose.models.Sale || mongoose.model('Sale', SaleSchema);

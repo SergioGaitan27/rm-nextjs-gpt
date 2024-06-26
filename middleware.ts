@@ -1,65 +1,67 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import jwt, { JwtPayload } from 'jsonwebtoken';
-import User from '@/models/User';
-import { connectDB } from '@/app/libs/mongodb';
+import { decode } from 'jsonwebtoken';
 
-const secretKey = process.env.JWT_SECRET;
-
-if (!secretKey) {
-  throw new Error('La clave secreta JWT no está definida en las variables de entorno');
+interface TokenPayload {
+  id: string;
+  role: string;
+  location: string;
+  businessId: string;
+  exp: number; // Añadimos la propiedad exp para la expiración del token
 }
 
-function verifyToken(token: string): JwtPayload & { id: string; role: string } {
-  return jwt.verify(token, secretKey as string) as JwtPayload & { id: string; role: string };
-}
+export function middleware(req: NextRequest) {
+  const token = req.cookies.get('next-auth.session-token') || req.cookies.get('__Secure-next-auth.session-token');
 
-export async function middleware(request: NextRequest) {
-  const tokenCookie = request.cookies.get('token');
+  // Rutas que requieren autenticación
+  const protectedPaths = [
+    '/products',
+    '/point-of-sale',
+    '/transfers',
+    '/protected',
+    '/another-protected-route',
+    '/admin',
+    '/dashboard',
+  ];
 
-  if (!tokenCookie) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
+  const url = req.nextUrl.clone();
+  url.pathname = '/login';
 
-  const token = tokenCookie.value;
-
-  try {
-    // Verifica el token usando la función auxiliar
-    const decoded = verifyToken(token);
-
-    // Conéctate a la base de datos
-    await connectDB();
-
-    // Busca el usuario en la base de datos
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url));
+  if (protectedPaths.some(path => req.nextUrl.pathname.startsWith(path))) {
+    if (!token) {
+      return NextResponse.redirect(url);
     }
 
-    // Definir las rutas que necesitan ciertos roles
-    const roleProtectedRoutes = [
-      { path: '/admin', roles: ['Super Administrador', 'Administrador'] },
-      { path: '/sistemas', roles: ['Sistemas'] },
-      { path: '/vendedor', roles: ['Vendedor'] },
-      { path: '/comprador', roles: ['Comprador'] },
-    ];
+    try {
+      const decodedToken = decode(token.value) as TokenPayload;
 
-    for (const route of roleProtectedRoutes) {
-      if (request.nextUrl.pathname.startsWith(route.path)) {
-        if (!route.roles.includes(user.role)) {
-          return NextResponse.redirect(new URL('/not-authorized', request.url));
-        }
+      // Verificar si el token ha expirado
+      if (decodedToken.exp && decodedToken.exp * 1000 < Date.now()) {
+        return NextResponse.redirect(url);
       }
-    }
 
-    return NextResponse.next();
-  } catch (error) {
-    console.error('Token verification failed:', error);
-    return NextResponse.redirect(new URL('/login', request.url));
+      // Verificar rol de Super Administrador para la página de gestión de usuarios
+      if (req.nextUrl.pathname.startsWith('/admin/manage-users') && decodedToken.role !== 'Super Administrador') {
+        url.pathname = '/unauthorized';
+        return NextResponse.redirect(url);
+      }
+
+    } catch (error) {
+      return NextResponse.redirect(url);
+    }
   }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/sistemas/:path*', '/vendedor/:path*', '/comprador/:path*'],
+  matcher: [
+    '/products/:path*',
+    '/point-of-sale/:path*',
+    '/transfers/:path*',
+    '/protected/:path*',
+    '/another-protected-route/:path*',
+    '/admin/:path*',
+    '/dashboard/:path*',
+  ],
 };

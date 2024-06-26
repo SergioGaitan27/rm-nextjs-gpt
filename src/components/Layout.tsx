@@ -79,6 +79,9 @@ const Layout = ({ children }: LayoutProps) => {
       case '/orders':
         setPageTitle('Pedidos');
         break;
+      case '/admin/manage-users':
+      setPageTitle('Gestión de usuarios');
+      break;   
       default:
         setPageTitle('Dashboard');
     }
@@ -131,6 +134,14 @@ const Layout = ({ children }: LayoutProps) => {
               {isSidebarOpen && <span className="ml-2 text-xl font-semibold" style={{ marginLeft: `${iconTextSpacing}px` }}>Reportes</span>}
             </a>
           </Link>
+          {session?.user?.role === 'Super Administrador' && (
+            <Link href="/admin/manage-users" legacyBehavior>
+              <a title="/admin/manage-users" className={`flex items-center hover:bg-yellow-500 hover:text-black rounded transition duration-300 ease-in-out transform hover:scale-110 p-2 ${spacingBetweenCategoryIcons}`}>
+                <span className={`${categoryIconSize}`}>👥</span>
+                {isSidebarOpen && <span className="ml-2 text-xl font-semibold" style={{ marginLeft: `${iconTextSpacing}px` }}>Administrar Usuarios</span>}
+              </a>
+            </Link>
+          )}
         </div>
       </div>
 

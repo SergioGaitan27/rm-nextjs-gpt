@@ -1,13 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    async rewrites() {
-      return [
-        {
-          source: '/:path*',
-          destination: '/:path*',
-        },
-      ];
-    },
-  };
-  
-  export default nextConfig;
+  async redirects() {
+    return [
+      {
+        source: '/unauthorized',
+        destination: '/',
+        permanent: false,
+      },
+    ];
+  },
+};
+
+export default nextConfig;

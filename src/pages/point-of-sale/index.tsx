@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Layout from '@/components/Layout';
 import Modal from 'react-modal';
+import moment from 'moment';
+import { useSession } from 'next-auth/react';
 
 interface StockLocation {
   location: string;
@@ -42,6 +44,7 @@ const PointOfSale = () => {
   const [cardAmount, setCardAmount] = useState<number | null>(null);
   const [reference, setReference] = useState('');
   const [modalMessage, setModalMessage] = useState('');
+  const { data: session } = useSession(); // Obtiene la sesión actual
   const searchInputRef = useRef<HTMLInputElement>(null);
   const cashInputRef = useRef<HTMLInputElement>(null);
   const cardInputRef = useRef<HTMLInputElement>(null);
@@ -87,11 +90,14 @@ const PointOfSale = () => {
   };
 
   const handleAddToCart = (product: Product) => {
-    const totalStock = product.stockLocations.reduce((total, loc) => total + loc.quantity, 0);
+    const userLocation = session?.user?.location || 'unknown';
+    const stockLocation = product.stockLocations.find(loc => loc.location === userLocation);
+    const totalStock = stockLocation ? stockLocation.quantity : 0;
+
     const existingProduct = cart.find(item => item._id === product._id);
     const existingQuantity = existingProduct ? existingProduct.quantity : 0;
     if (existingQuantity + 1 > totalStock) {
-      setModalMessage('No hay suficiente existencia para agregar más piezas de este producto.');
+      setModalMessage('No hay suficiente existencia para agregar más piezas de este producto en tu ubicación.');
       setModalIsOpen(true);
       return;
     }
@@ -118,9 +124,12 @@ const PointOfSale = () => {
   };
 
   const handleQuantityChange = (product: CartProduct, quantity: number) => {
-    const totalStock = product.stockLocations.reduce((total, loc) => total + loc.quantity, 0);
+    const userLocation = session?.user?.location || 'unknown';
+    const stockLocation = product.stockLocations.find(loc => loc.location === userLocation);
+    const totalStock = stockLocation ? stockLocation.quantity : 0;
+
     if (quantity > totalStock) {
-      setModalMessage('No hay suficiente existencia para agregar más piezas de este producto.');
+      setModalMessage('No hay suficiente existencia para agregar más piezas de este producto en tu ubicación.');
       setModalIsOpen(true);
       return;
     }
@@ -174,6 +183,47 @@ const PointOfSale = () => {
         mixedCashInputRef.current.focus();
       }
     }, 0);
+  };
+
+  const handleConfirmPayment = async () => {
+    const sale = {
+      saleType: selectedPaymentMethod,
+      date: moment().format('DD/MM/YYYY HH:mm:ss'),
+      items: cart.map(item => ({
+        description: item.name,
+        pieceCode: item.productCode,
+        appliedPrice: getApplicablePrice(item).price,
+        totalPieces: item.quantity,
+      })),
+      totalAmount: getTotalPrice(),
+      profile: session?.user?.name || 'Desconocido', // Utilizamos el perfil real del usuario
+      paymentDetails: {
+        cashAmount: selectedPaymentMethod === 'Efectivo' || selectedPaymentMethod === 'Mixto' ? cashAmount : 0,
+        cardAmount: selectedPaymentMethod === 'Tarjeta' || selectedPaymentMethod === 'Mixto' ? cardAmount : 0,
+        reference: selectedPaymentMethod === 'Tarjeta' || selectedPaymentMethod === 'Mixto' ? reference : '',
+      }
+    };
+
+    try {
+      const response = await fetch('/api/sales', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sale),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al guardar la venta');
+      }
+
+      const data = await response.json();
+      console.log('Venta guardada con éxito:', data);
+      setPaymentModalIsOpen(false);
+      setCart([]);
+    } catch (error) {
+      console.error('Error al guardar la venta:', error);
+    }
   };
 
   const filteredProducts = products.filter((product) =>
@@ -459,7 +509,7 @@ const PointOfSale = () => {
             </div>
           )}
           <button
-            onClick={() => setPaymentModalIsOpen(false)}
+            onClick={handleConfirmPayment}
             className={`px-4 py-2 mt-4 w-full rounded-md ${isPaymentButtonDisabled() ? 'bg-gray-500 text-gray-300' : 'bg-yellow-400 text-black hover:bg-yellow-500'}`}
             disabled={isPaymentButtonDisabled()}
           >

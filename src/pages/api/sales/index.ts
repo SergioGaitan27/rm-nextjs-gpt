@@ -1,43 +1,33 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { connectDB } from '@/app/libs/mongodb';
-import Product from '@/models/Product';
 import Sale from '@/models/Sale';
+import Product from '@/models/Product';
+import mongoose from 'mongoose';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await connectDB();
 
   if (req.method === 'POST') {
-    const { sales } = req.body;
-
-    if (!sales || !Array.isArray(sales) || sales.length === 0) {
-      return res.status(400).json({ message: 'Invalid sales data' });
-    }
-
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
-      const salePromises = sales.map(async (sale) => {
-        const { productId, quantity, salePrice } = sale;
+      const sale = new Sale(req.body);
 
-        // Save the sale
-        const newSale = new Sale({ productId, quantity, salePrice });
-        await newSale.save();
+      // Actualizar el stock de los productos
+      for (const item of sale.items) {
+        await Product.reduceStock(item.pieceCode, item.totalPieces);
+      }
 
-        // Update the product inventory
-        const product = await Product.findById(productId);
-        if (!product) {
-          throw new Error(`Product with id ${productId} not found`);
-        }
-        product.piecesPerBox -= quantity;
-        await product.save();
-      });
-
-      await Promise.all(salePromises);
-
-      return res.status(201).json({ message: 'Sales recorded successfully' });
+      await sale.save({ session });
+      await session.commitTransaction();
+      session.endSession();
+      res.status(201).json({ success: true, data: sale });
     } catch (error) {
-      console.error('Error recording sales:', error);
-      return res.status(500).json({ message: 'Internal server error' });
+      await session.abortTransaction();
+      session.endSession();
+      res.status(400).json({ success: false, error: (error as Error).message });
     }
   } else {
-    return res.status(405).json({ message: 'Method not allowed' });
+    res.status(405).json({ success: false, error: 'Método no permitido' });
   }
 }
