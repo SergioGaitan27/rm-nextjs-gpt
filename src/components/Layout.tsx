@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 import { FaSignOutAlt } from 'react-icons/fa'; // Asegúrate de tener react-icons instalado
 import { useRouter } from 'next/router';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 interface LayoutProps {
   children: ReactNode;
@@ -177,6 +178,7 @@ const Layout = ({ children }: LayoutProps) => {
           {children}
         </main>
       </div>
+      <SpeedInsights />
     </div>
   );
 };

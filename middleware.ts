@@ -21,7 +21,6 @@ export function middleware(req: NextRequest) {
     '/protected',
     '/another-protected-route',
     '/admin',
-    '/dashboard',
   ];
 
   const url = req.nextUrl.clone();

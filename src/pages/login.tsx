@@ -18,7 +18,7 @@ const LoginPage = () => {
     if (result?.error) {
       setError(result.error);
     } else {
-      window.location.href = '/dashboard';
+      window.location.href = '/reports';
     }
   };
 
