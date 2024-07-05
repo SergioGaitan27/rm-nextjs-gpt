@@ -1,7 +1,6 @@
 import { useState, ReactNode, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSession, signOut } from 'next-auth/react';
 import { FaSignOutAlt } from 'react-icons/fa'; // Asegúrate de tener react-icons instalado
 import { useRouter } from 'next/router';
 import { SpeedInsights } from "@vercel/speed-insights/next"
@@ -14,7 +13,6 @@ const Layout = ({ children }: LayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isHoveringSidebar, setIsHoveringSidebar] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const { data: session } = useSession(); // Obtiene la sesión actual
   const router = useRouter(); // Para redireccionar después de cerrar sesión
 
   const hamburgerIconSize = "text-5xl";
@@ -50,12 +48,11 @@ const Layout = ({ children }: LayoutProps) => {
   };
 
   const handleSignOut = async () => {
-    await signOut({ redirect: false });
-    router.push('/login');
+    router.push('/');
   };
 
   // Ruta de la imagen de perfil o la imagen por defecto
-  const profileImageSrc = session?.user?.image || '/images/default-profile.png';
+  const profileImageSrc = '/images/default-profile.png';
 
   // Determina el título basado en la ruta actual
   const [pageTitle, setPageTitle] = useState('Dashboard');
@@ -71,7 +68,7 @@ const Layout = ({ children }: LayoutProps) => {
       case '/products/new':
         setPageTitle('Nuevo Producto');
         break;
-        case '/transfers':
+      case '/transfers':
         setPageTitle('Trasladar Stock');
         break;
       case '/reports':
@@ -80,9 +77,9 @@ const Layout = ({ children }: LayoutProps) => {
       case '/orders':
         setPageTitle('Pedidos');
         break;
-      case '/admin/manage-users':
-      setPageTitle('Gestión de usuarios');
-      break;   
+      case '/manage-users':
+        setPageTitle('Gestión de usuarios');
+        break;   
       default:
         setPageTitle('Dashboard');
     }
@@ -135,14 +132,12 @@ const Layout = ({ children }: LayoutProps) => {
               {isSidebarOpen && <span className="ml-2 text-xl font-semibold" style={{ marginLeft: `${iconTextSpacing}px` }}>Reportes</span>}
             </a>
           </Link>
-          {session?.user?.role === 'Super Administrador' && (
-            <Link href="/admin/manage-users" legacyBehavior>
-              <a title="/admin/manage-users" className={`flex items-center hover:bg-yellow-500 hover:text-black rounded transition duration-300 ease-in-out transform hover:scale-110 p-2 ${spacingBetweenCategoryIcons}`}>
+          <Link href="/manage-users" legacyBehavior>
+              <a title="/manage-users" className={`flex items-center hover:bg-yellow-500 hover:text-black rounded transition duration-300 ease-in-out transform hover:scale-110 p-2 ${spacingBetweenCategoryIcons}`}>
                 <span className={`${categoryIconSize}`}>👥</span>
                 {isSidebarOpen && <span className="ml-2 text-xl font-semibold" style={{ marginLeft: `${iconTextSpacing}px` }}>Administrar Usuarios</span>}
               </a>
             </Link>
-          )}
         </div>
       </div>
 
@@ -161,9 +156,9 @@ const Layout = ({ children }: LayoutProps) => {
               {isProfileOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white text-black rounded-lg shadow-lg py-2">
                   <div className="px-4 py-2">
-                    <p className="font-semibold">{session?.user?.name}</p>
-                    <p className="text-sm text-gray-600">{session?.user?.email}</p>
-                    <p className="text-sm text-gray-600">{session?.user?.role}</p>
+                    <p className="font-semibold">Desconocido</p>
+                    <p className="text-sm text-gray-600">Desconocido</p>
+                    <p className="text-sm text-gray-600">Desconocido</p>
                   </div>
                 </div>
               )}

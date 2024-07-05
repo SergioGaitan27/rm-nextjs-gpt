@@ -119,7 +119,7 @@ const RegisterPage = () => {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-400">
             ¿Ya tienes una cuenta?{' '}
-            <Link href="/login" className="font-medium text-yellow-400 hover:text-yellow-300">
+            <Link href="/" className="font-medium text-yellow-400 hover:text-yellow-300">
               Inicia sesión ahora
             </Link>
           </p>
@@ -225,7 +225,7 @@ const RegisterPage = () => {
           <button
             onClick={() => {
               setModalIsOpen(false);
-              window.location.href = '/login';
+              window.location.href = '/';
             }}
             className="px-4 py-2 bg-yellow-400 text-black rounded-md hover:bg-yellow-500"
           >

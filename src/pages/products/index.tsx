@@ -1,9 +1,7 @@
 import Layout from '@/components/Layout';
-import Link from 'next/link';
 import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import Image from 'next/image';
-import { motion } from 'framer-motion';
 import { Menu, MenuItem, MenuButton } from '@szhsin/react-menu';
 import '@szhsin/react-menu/dist/index.css';
 import Modal from 'react-modal';

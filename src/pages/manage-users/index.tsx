@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import { getUsers, updateUser, User } from '@/services/userService';
 
 const ManageUsers = () => {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,15 +11,6 @@ const ManageUsers = () => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    }
-
-    if (session?.user?.role !== 'Super Administrador') {
-      router.push('/unauthorized');
-      return;
-    }
-
     const fetchUsers = async () => {
       try {
         const fetchedUsers = await getUsers();
@@ -34,7 +23,7 @@ const ManageUsers = () => {
     };
 
     fetchUsers();
-  }, [session, status, router]);
+  }, [router]);
 
   const handleEditUser = (user: User) => {
     setEditingUser(user);

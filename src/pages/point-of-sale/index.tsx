@@ -3,7 +3,6 @@ import Image from 'next/image';
 import Layout from '@/components/Layout';
 import Modal from 'react-modal';
 import moment from 'moment';
-import { useSession } from 'next-auth/react';
 
 interface StockLocation {
   location: string;
@@ -44,7 +43,6 @@ const PointOfSale = () => {
   const [cardAmount, setCardAmount] = useState<number | null>(null);
   const [reference, setReference] = useState('');
   const [modalMessage, setModalMessage] = useState('');
-  const { data: session } = useSession(); // Obtiene la sesión actual
   const searchInputRef = useRef<HTMLInputElement>(null);
   const cashInputRef = useRef<HTMLInputElement>(null);
   const cardInputRef = useRef<HTMLInputElement>(null);
@@ -90,8 +88,7 @@ const PointOfSale = () => {
   };
 
   const handleAddToCart = (product: Product) => {
-    const userLocation = session?.user?.location || 'unknown';
-    const stockLocation = product.stockLocations.find(loc => loc.location === userLocation);
+    const stockLocation = product.stockLocations.find(loc => loc.location === 'default');
     const totalStock = stockLocation ? stockLocation.quantity : 0;
 
     const existingProduct = cart.find(item => item._id === product._id);
@@ -124,8 +121,7 @@ const PointOfSale = () => {
   };
 
   const handleQuantityChange = (product: CartProduct, quantity: number) => {
-    const userLocation = session?.user?.location || 'unknown';
-    const stockLocation = product.stockLocations.find(loc => loc.location === userLocation);
+    const stockLocation = product.stockLocations.find(loc => loc.location === 'default');
     const totalStock = stockLocation ? stockLocation.quantity : 0;
 
     if (quantity > totalStock) {
@@ -196,7 +192,7 @@ const PointOfSale = () => {
         totalPieces: item.quantity,
       })),
       totalAmount: getTotalPrice(),
-      profile: session?.user?.name || 'Desconocido', // Utilizamos el perfil real del usuario
+      profile: 'Desconocido', // Utilizamos un perfil por defecto
       paymentDetails: {
         cashAmount: selectedPaymentMethod === 'Efectivo' || selectedPaymentMethod === 'Mixto' ? cashAmount : 0,
         cardAmount: selectedPaymentMethod === 'Tarjeta' || selectedPaymentMethod === 'Mixto' ? cardAmount : 0,
